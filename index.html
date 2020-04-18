@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <script src="https://cdn.jsdelivr.net/npm/phaser@3.15.1/dist/phaser-arcade-physics.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.22.0/dist/phaser.js"></script>
   </head>
   <body>
     <script>
@@ -10,10 +10,15 @@
         width: 800,
         height: 600,
         physics: {
-          default: "arcade",
-          arcade: {
-            gravity: { y: 300 },
-            debug: false,
+          default: "impact",
+          impact: {
+            setBounds: {
+              x: 0,
+              y: 0,
+              width: 800,
+              height: 600,
+              thickness: 32,
+            },
           },
         },
         scene: {
@@ -24,7 +29,7 @@
             createLandscape: createLandscape,
             createPlayer: createPlayer,
             createStars: createStars,
-            createBombs: createBombs,
+            createEnnemies: createEnnemies,
           },
         },
       };
@@ -46,13 +51,17 @@
           frameWidth: 32,
           frameHeight: 48,
         });
+        this.load.spritesheet("face", "assets/metalface78x92.png", {
+          frameWidth: 78,
+          frameHeight: 92,
+        });
       }
 
       function create() {
         this.createLandscape();
         this.createPlayer();
-        this.createStars();
-        this.createBombs();
+        // this.createStars();
+        this.createEnnemies();
 
         cursors = this.input.keyboard.createCursorKeys();
 
@@ -117,21 +126,16 @@
 
       function createLandscape() {
         this.add.image(400, 300, "sky");
-        platforms = this.physics.add.staticGroup();
-
-        platforms.create(400, 568, "ground").setScale(2).refreshBody();
-        platforms.create(600, 400, "ground");
-        platforms.create(50, 250, "ground");
-        platforms.create(750, 220, "ground");
       }
 
       function createPlayer() {
-        player = this.physics.add.sprite(100, 450, "dude");
+        player = this.impact.add.sprite(100, 450, "dude").setDepth(1);
+        player.setMaxVelocity(1000).setFriction(800, 600).setPassiveCollision();
 
-        player.setBounce(0.2);
-        player.setCollideWorldBounds(true);
+        // player.setBounce(0.2);
+        // player.setCollideWorldBounds(true);
 
-        this.physics.add.collider(player, platforms);
+        // this.physics.add.collider(player, platforms);
 
         this.anims.create({
           key: "left",
@@ -168,11 +172,34 @@
         this.physics.add.overlap(player, stars, collectStar, null, this);
       }
 
-      function createBombs() {
-        bombs = this.physics.add.group();
+      function createEnnemies() {
+        var config = {
+          key: "metaleyes",
+          frames: this.anims.generateFrameNumbers("face", { start: 0, end: 4 }),
+          frameRate: 20,
+          repeat: -1,
+        };
 
-        this.physics.add.collider(bombs, platforms);
-        this.physics.add.collider(player, bombs, hitBomb, null, this);
+        this.anims.create(config);
+
+        for (var i = 0; i < 10; i++) {
+          var x = Phaser.Math.Between(100, 600);
+          var y = Phaser.Math.Between(100, 300);
+
+          var face = this.impact.add.sprite(x, y, "face").play("metaleyes");
+
+          face.setLiteCollision().setBounce(1).setBodyScale(0.5);
+          face.setVelocity(
+            Phaser.Math.Between(20, 60),
+            Phaser.Math.Between(20, 60)
+          );
+
+          if (Math.random() > 0.5) {
+            face.vel.x *= -1;
+          } else {
+            face.vel.y *= -1;
+          }
+        }
       }
     </script>
   </body>
